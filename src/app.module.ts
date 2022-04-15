@@ -5,13 +5,15 @@ import { NotificationModule } from './notification/notification.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
+import { QueryModule } from './query/query.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     NotificationModule,
     DatabaseModule,
-    UserModule
+    UserModule,
+    QueryModule
   ],
   controllers: [AppController],
   providers: [AppService],

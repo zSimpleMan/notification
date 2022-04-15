@@ -1,7 +1,8 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { RedisIoAdapter } from './adapters/socket-redis.adapter'
 import { ValidationPipe } from '@nestjs/common';
+import { AllExceptionsFilter } from './middlewares/exception-filter';
 
 declare const module: any;
 
@@ -14,6 +15,9 @@ async function bootstrap() {
     module.hot.accept();
     module.hot.dispose(() => app.close());
   }
+
+  const httpAdapter = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
   await app.listen(process.env.PORT, () => {
     console.log(`app is running on: http://localhost:${process.env.PORT}`)

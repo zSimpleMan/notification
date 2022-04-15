@@ -1,10 +1,10 @@
 import { Sequelize } from 'sequelize-typescript';
 import { User } from '../user/user.entity';
-import { Notification } from '../notification/notification.entity'
+import { NotificationRead } from 'src/notification/notification-read.entity';
 
-export const databaseProviders = [
+export const readDatabaseProviders = [
   {
-    provide: 'SEQUELIZE',
+    provide: 'SEQUELIZE_READ_INSTANCE',
     useFactory: async () => {
       const sequelize = new Sequelize({
         dialect: 'postgres',
@@ -22,6 +22,6 @@ export const databaseProviders = [
 ];
 
 const models = [
-  Notification,
+  NotificationRead,
   User
 ]

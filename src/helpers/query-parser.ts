@@ -1,60 +1,24 @@
-import { FindOptions, IncludeOptions, WhereOptions } from 'sequelize'
+import { IncludeOptions, WhereOptions } from 'sequelize'
 import { isArray } from 'lodash'
 import { Sequelize } from 'sequelize-typescript'
-import { ICriteria, IFilter, IInclude, ISort } from '../interfaces/interfaces';
+import { IFilter, IInclude, ISort } from '../interfaces/interfaces';
+import { ObjectHelper } from './object-helper';
 
 export class SequelizeOptionsParser {
 
-  parse(rawCriteria: ICriteria): FindOptions {
-    let finalResult: FindOptions = {};
+  private static instance: SequelizeOptionsParser
 
-    if (!rawCriteria) {
-      return finalResult;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  private constructor() {}
+
+  public static getInstance () {
+    if (!this.instance) {
+      this.instance = new SequelizeOptionsParser()
     }
-
-    const { select, filters, limit, page, includes, sort, search, groupBy, offset, ...otherCriterias } = rawCriteria;
-
-    if (select && select.length) {
-      finalResult.attributes = this._parseSelect(select);
-    }
-
-    if (groupBy && groupBy.length) {
-      finalResult.group = this._parseGroupBy(groupBy);
-    }
-
-    if (filters && filters.length) {
-      finalResult.where = this._parseFilters(filters);
-    }
-
-    if (limit && (page || offset !== undefined)) {
-      finalResult.limit = limit;
-      finalResult.offset = page ? (page - 1) * limit : offset;
-    }
-
-    const parsedInclude: IInclude[] = JSON.parse(includes.toString())
-    if (parsedInclude && parsedInclude.length) {
-      finalResult.include = this._parseIncludes(parsedInclude);
-    }
-
-    if (sort) {
-      finalResult.order = this._parseSort(sort);
-    }
-
-    if (search) {
-      finalResult.where = finalResult.where
-        && Object.assign(finalResult.where, this._parseSearch(search))
-        || this._parseSearch(search);
-    }
-
-    finalResult = {
-      ...finalResult,
-      ...otherCriterias,
-    };
-    
-    return finalResult;
+    return this.instance
   }
 
-  private _parseGroupBy(rawGroupBy: any): any[] {
+  _parseGroupBy(rawGroupBy: any): any[] {
     if (typeof rawGroupBy === 'string') {
       rawGroupBy = rawGroupBy.split(',').map(i => i.trim());
     }
@@ -71,7 +35,7 @@ export class SequelizeOptionsParser {
     return findAttributes;
   }
 
-  private _parseSelect(rawSelect: any): any[] {
+  _parseSelect(rawSelect: any): any[] {
     if (isArray(rawSelect)) {
       const findAttributes = rawSelect.map(column => {
         const isAggregationColumn = column.includes(':');
@@ -101,7 +65,7 @@ export class SequelizeOptionsParser {
     throw new Error('Select must be a string or an array');
   }
 
-  private _parseAggregationColumn(aggretionColumn: string): any[] {
+  _parseAggregationColumn(aggretionColumn: string): any[] {
     const [aggregationFunction, aggregationColumn, aliasColumn] = aggretionColumn.split(':').map(i => i.trim());
 
     const isRawQuery: boolean = aggregationFunction.startsWith('raw');
@@ -168,7 +132,7 @@ export class SequelizeOptionsParser {
     return aggregationAttribute;
   }
 
-  private _parseAggregationColumnForGroupBy(aggretionColumn: string): any[] {
+  _parseAggregationColumnForGroupBy(aggretionColumn: string): any[] {
     const [aggregationFunction, aggregationColumn] = aggretionColumn.split(':').map(i => i.trim());
 
     const isRawQuery: boolean = aggregationFunction.startsWith('raw');
@@ -208,7 +172,7 @@ export class SequelizeOptionsParser {
     return aggregationAttribute;
   }
 
-  private _parseSort(sort: ISort): [string, string][] {
+  _parseSort(sort: ISort): [string, string][] {
     if (!sort || !sort.column) return;
     
     const columns = sort.column.split(/[,]/).map(i => i.trim());
@@ -233,7 +197,7 @@ export class SequelizeOptionsParser {
     return columnsWithAggregations;
   }
 
-  private _parseAggregationColumnForSort(aggretionColumn: string, sortDirection = 'ASC'): any[] {
+  _parseAggregationColumnForSort(aggretionColumn: string, sortDirection = 'ASC'): any[] {
     const [aggregationFunction, aggregationColumn] = aggretionColumn.split(':').map(i => i.trim());
     
     const isRawQuery: boolean = aggregationFunction.startsWith('raw');
@@ -264,7 +228,7 @@ export class SequelizeOptionsParser {
     return aggregationAttribute;
   }
 
-  private _parseFilters(filters: IFilter[]): WhereOptions {
+  _parseFilters(filters: IFilter[]): WhereOptions {
     const where: WhereOptions = {};
 
     filters.forEach(filter => {
@@ -334,7 +298,7 @@ export class SequelizeOptionsParser {
     return where;
   }
 
-  private getFilterValue(filterValue: any, isMultipleValueOperator = false): any {
+  getFilterValue(filterValue: any, isMultipleValueOperator = false): any {
     if (isMultipleValueOperator) {
       if (!isArray(filterValue)) {
         throw new Error('Value must be array');
@@ -350,7 +314,7 @@ export class SequelizeOptionsParser {
     return filterValue;
   }
 
-  private _parseIncludes(rawIncludes: IInclude[]): IncludeOptions[] {
+  _parseIncludes(rawIncludes: IInclude[]): IncludeOptions[] {
     if (!rawIncludes || !rawIncludes.length) {
       return;
     }
@@ -358,7 +322,7 @@ export class SequelizeOptionsParser {
     return rawIncludes.map(include => this._parseInclude(include));
   }
 
-  private _parseInclude(rawInclude: IInclude): IncludeOptions {
+  _parseInclude(rawInclude: IInclude): IncludeOptions {
     if (!rawInclude || !rawInclude.field) {
       return;
     }
@@ -389,7 +353,7 @@ export class SequelizeOptionsParser {
     return result;
   }
 
-  private _parseSearch(keyword: string): WhereOptions {
+  _parseSearch(keyword: string): WhereOptions {
     if (/^\d{9}$/.test(keyword)) {
       // case keyword match id format
       return { id: Number(keyword) };
@@ -397,5 +361,39 @@ export class SequelizeOptionsParser {
       // case default is entity name
       return { name: { $iLike: `%${keyword}%` } };
     }
+  }
+
+  _addCondition(whereOptions: WhereOptions, condition): WhereOptions {
+    if (!whereOptions) whereOptions = {};
+
+    ObjectHelper.extend(whereOptions, condition);
+    return whereOptions
+  }
+
+  _appendAnd(whereOptions: WhereOptions, key: string, value: any): WhereOptions {
+    if (!whereOptions) whereOptions = {};
+
+    if (whereOptions[key]) {
+      whereOptions = { $and: [whereOptions, value] };
+    } else {
+      ObjectHelper.extend(whereOptions, value);
+    }
+    return whereOptions
+  }
+
+  _appendOr(whereOptions: WhereOptions, key: string, value: any): WhereOptions {
+    if (!whereOptions) whereOptions = {};
+
+    if (whereOptions[key]) {
+      const oldVal = ObjectHelper.clone(whereOptions[key]);
+      delete whereOptions[key];
+      ObjectHelper.extend(whereOptions, {
+        $or: [ObjectHelper.set({}, key, oldVal), value]
+      });
+    } else {
+      ObjectHelper.extend(whereOptions, value);
+    }
+
+    return whereOptions
   }
 }

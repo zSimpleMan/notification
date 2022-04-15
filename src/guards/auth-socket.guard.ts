@@ -6,6 +6,7 @@ export class AuthSocketGuard implements CanActivate {
   async canActivate(
     context: ExecutionContext,
   ) {
+    console.log('active guard')
     const token = context.getArgs()[0].handshake.headers.authorization.split(' ')[1].trim()
     const req = context.switchToHttp().getRequest()
 

@@ -1,13 +1,16 @@
-import { IsNotEmpty, IsNumber, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateNotificationDto {
   @IsNumber()
+  @IsOptional()
   userId: number
 
   @IsNumber()
+  @IsOptional()
   brandId: number
 
   @IsNumber()
+  @IsOptional()
   companyId: number
 
   @IsString()
@@ -20,6 +23,7 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   @MinLength(1)
   @MaxLength(50)
+  @IsIn(['NOTI_USER', 'NOTI_BRAND', 'NOTI_COMPANY'])
   type: string
 
   @IsString()

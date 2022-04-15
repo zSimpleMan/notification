@@ -58,3 +58,14 @@ export interface IInclude {
   filters?: IFilter[];
 }
 
+export enum EntityStatus {
+  Deleted = -1,
+  Inactive = 0,
+  Active = 1
+}
+
+export enum ACCOUNT_TYPES {
+  Admin = 1,
+  Company,
+  Brand,
+}

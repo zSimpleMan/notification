@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 // import axios from 'axios'
 import { HttpClient } from 'src/helpers/http-client';
@@ -12,7 +12,7 @@ export class AuthGuard implements CanActivate {
     const token = this.getToken(req)
 
     if (!token || token === '') {
-      throw new HttpException('Missing Token', HttpStatus.UNAUTHORIZED)
+      throw new UnauthorizedException('Missing Token')
     }
 
     const httpClient = new HttpClient(
@@ -27,7 +27,7 @@ export class AuthGuard implements CanActivate {
       if (!data) throw Error(`error when get app context`);
 
     } catch {
-      throw new HttpException('unauthorized', HttpStatus.UNAUTHORIZED)
+      throw new UnauthorizedException('unauthorized')
     }
 
     const isSuperAdmin = data.user.isSuperAdmin;
